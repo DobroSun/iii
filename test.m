@@ -1,32 +1,21 @@
 
-b = (3.0 + 12) * ((10 / 10) + 1) <= (30);
 
-b = 123;
-a = b ^ 2;
+double b = 200.0;
+int a = 2;
 
-c = 1 % 10;
+int main() {
+  int c = true | false;
+  if (1) {
+    int z = 0;
 
-/* 
-1) procedure definition?
-define :: (a, b) {
-  return a
-}
-*/
+  } else if (0) {
+    int zzz = 0;
 
-proc define(a, b) {
-}
+  } else if ( 0 | 1 ) {
 
-
-//a = a ^ 2;
-
-/*
-if true {
-  c = 24;
-  b = 12;
-  if b+1 {
-    c = 1.234;
   } else {
+    int z = 0;
   }
-  b = 1.0;
+
+  //a += 10;
 }
-*/

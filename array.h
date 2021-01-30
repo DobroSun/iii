@@ -1,20 +1,18 @@
+#ifndef MY_ARRAY_IMPL_H
+#define MY_ARRAY_IMPL_H
 
 template<class T>
 struct array {
-  T *data = NULL;
-  size_t capacity = 0;
-  size_t size = 0;
+  T *data      = NULL;
+  s32 capacity = 0;
+  s32 size     = 0;
 
-  static constexpr size_t eight = 8;
+  static constexpr s32 eight = 8;
 
   array() = default;
-  array(const array &other) = delete;
-  array &operator=(const array &other) = delete;
-  array(array &&other) = delete;
-  array &operator=(array &&other) = delete;
 
   ~array() {
-    free(data);
+    delete[] data;
     data     = NULL;
     capacity = 0;
     size     = 0;
@@ -33,8 +31,8 @@ struct array {
     return add() = std::move(val);
   }
 
-  void find(T **iter, size_t *index, const T &val) {
-    for(size_t i = 0; i < size; i++) {
+  void find(const T &val, T **iter, s32 *index) {
+    for(s32 i = 0; i < size; i++) {
       if(this->operator[](i) == val) {
         *iter  = &this->operator[](i);
         *index = i;
@@ -44,8 +42,8 @@ struct array {
     *iter = NULL;
   }
 
-  size_t remove(const T &val) {
-    T *iter; size_t index;
+  s32 remove(const T &val) {
+    T *iter; s32 index;
     find(&iter, &index, val);
 
     assert(iter);
@@ -56,11 +54,11 @@ struct array {
     return index;
   }
 
-  T &insert(size_t index) {
+  T &insert(s32 index) {
     if(index >= size)    { return add(); }
     if(size == capacity) { reserve(); }
 
-    const size_t size_to_copy = size - index;
+    const s32 size_to_copy = size - index;
     size++;
 
     T tmp[size_to_copy];
@@ -71,11 +69,11 @@ struct array {
     return data[index];
   }
 
-  T &insert(const T &c, size_t index) {
+  T &insert(const T &c, s32 index) {
     return insert(index) = c;
   }
 
-  T &insert(T &&c, size_t index) {
+  T &insert(T &&c, s32 index) {
     return insert(index) = std::move(c);
   }
 
@@ -83,12 +81,12 @@ struct array {
   T &first() { return data[0]; }
   T &last()  { return data[size-1]; }
 
-  void reserve(size_t new_cap=0) {
+  void reserve(s32 new_cap=0) {
     if(!data) {
       assert(!capacity && !size && !data);
 
       new_cap = (new_cap)? new_cap: eight;
-      data = (T*)malloc(sizeof(T) * new_cap);
+      data = new T[new_cap];
       capacity = new_cap;
 
     } else {
@@ -96,14 +94,14 @@ struct array {
       new_cap = (new_cap)? new_cap: 2*capacity;
 
       if(new_cap > capacity) {
-        auto new_data = (T*)malloc(sizeof(T) * new_cap);
+        auto new_data = new T[new_cap];
         assert(new_data);
         if(size) {
           memcpy(new_data, data, sizeof(T) * size);
         }
         capacity = new_cap;
 
-        free(data);
+        delete[] data;
         data = new_data;
 
       } else {
@@ -112,12 +110,12 @@ struct array {
           size     = new_cap;
           capacity = new_cap;
 
-          auto new_data = (T*)malloc(sizeof(T) * new_cap);
+          auto new_data = new T[new_cap];
           assert(new_data);
 
           memcpy(new_data, data, sizeof(T) * size);
 
-          free(data);
+          delete[] data;
           data = new_data;
 
         } else {
@@ -127,7 +125,7 @@ struct array {
     }
   }
 
-  void resize_with_no_init(size_t new_size=0) {
+  void resize_with_no_init(s32 new_size=0) {
     reserve(new_size);
     size = capacity;
   }
@@ -140,22 +138,22 @@ struct array {
     return size == 0;
   }
 
-  T &operator[](size_t index) {
-    assert(index < size);
+  T &operator[](s32 index) {
+    assert(index >= 0 && index < size);
     return data[index];
   }
 
-  const T &operator[](size_t index) const {
-    assert(index < size);
+  const T &operator[](s32 index) const {
+    assert(index >= 0 && index < size);
     return data[index];
   }
 
 
   struct iterator {
-    size_t index; T *p;
+    s32 index; T *p;
     
-    explicit iterator(size_t i)       { index = i; }
-    explicit iterator(size_t i, T* d) { index = i; p = d; }
+    explicit iterator(s32 i)          { index = i; }
+    explicit iterator(s32 i, T* d)    { index = i; p = d; }
     iterator& operator++()            { ++index; return *this; }
     iterator& operator++(int)         { ++index; return *this; }
     bool operator==(iterator o) const { return index == o.index; }
@@ -169,7 +167,7 @@ struct array {
 template<class T>
 bool operator==(const array<T> &a, const array<T> &b) {
   if(a.size == b.size) {
-    for(size_t i = 0; i < a.size; i++) {
+    for(s32 i = 0; i < a.size; i++) {
       if(a[i] != b[i]) { return false; }
     }
     return true;
@@ -181,62 +179,18 @@ bool operator==(const array<T> &a, const array<T> &b) {
 template<class T>
 void copy_array(array<T> *a, const array<T> *b) {
   if(a->capacity <= b->size) {
-    free(a->data);
-    a->data = (T *)malloc(sizeof(T) * b->size);
+    delete[] a->data;
+    a->data = new T[b->size];
     a->capacity = b->size;
-  } else {
   }
-
   memcpy(a->data, b->data, sizeof(T) * b->size);
   a->size     = b->size;
 }
 
 template<class T>
 void move_array(array<T> *a, array<T> *b) {
-  a->data     = b->data;
-  a->capacity = b->capacity;
-  a->size     = b->size;
-
-  b->data = NULL;
-  b->capacity = 0;
-  b->size     = 0;
+  memcpy(a, b, sizeof(array<T>));
+  new (b) array<T>();
 }
 
-/*
-
-inline bool operator==(const string_t &a, const string_t &b) {
-  if(a.size == b.size) {
-    return !strncmp(a.data, b.data, a.size);
-  } else {
-    return false;
-  }
-}
-
-inline void from_c_string(string_t *s, const char *c_string, size_t size) {
-  if(s->capacity < size) {
-    s->resize_with_no_init(size);
-  }
-  memcpy(s->data, c_string, sizeof(char)*size);
-}
-
-inline void from_c_string(string_t *s, const char *c_string) {
-  from_c_string(s, c_string, strlen(c_string));
-}
-
-#define to_c_string(s, c_name) \
-  char c_name[(s)->size+1]; \
-  memcpy(c_name, (s)->data, sizeof(char) * (s)->size); \
-  c_name[(s)->size] = '\0';
-
-
-#define move_string(s1, s2) move_array(s1, s2)
-#define copy_string(s1, s2) copy_array(s1, s2)
-
-inline std::ostream &operator<<(std::ostream &os, const string_t &s) {
-  assert(s.size <= s.capacity);
-  for(size_t i = 0; i < s.size; i++) {
-    os << s[i];
-  }
-  return os;
-}
-*/
+#endif

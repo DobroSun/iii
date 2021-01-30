@@ -3,7 +3,7 @@
 CXX := g++
 DEPS := main.o
 EXE_NAME := main
-DEFAULT_CXX_FLAGS := -Wall -Wextra -L. -I.
+DEFAULT_CXX_FLAGS := #-Wall -Wextra -L. -I.
 
 run-debug: clean debug
 	./$(EXE_NAME)

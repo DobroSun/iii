@@ -1,4 +1,7 @@
+#ifndef MY_UTILITY_IMPL_H
+#define MY_UTILITY_IMPL_H
 
+// @Incomplete: Use stdint.h
 typedef long int           s64;
 typedef int                s32;
 typedef short int          s16;
@@ -58,8 +61,6 @@ ScopeGuard<F> operator+(Junk, F &&fun) {
   return ScopeGuard<F>(std::move(fun));
 }
 
-
-
 struct literal {
   const char *data = NULL;
   size_t      size = 0;
@@ -80,14 +81,6 @@ struct literal {
   memcpy(name, l.data, l.size); \
   name[l.size] = '\0'
 
-inline bool operator==(const char *s, const literal &l) {
-  return !strncmp(s, l.data, l.size);
-}
-
-inline bool operator==(const literal &l, const char *s) {
-  return !strncmp(s, l.data, l.size);
-}
-
 inline bool operator==(const literal &l1, const literal &l2) {
   if(l1.size == l2.size) {
     return !strncmp(l1.data, l2.data, l1.size);
@@ -95,6 +88,9 @@ inline bool operator==(const literal &l1, const literal &l2) {
     return false;
   }
 }
+
+inline bool operator==(const char *s, const literal &l) { return !strncmp(s, l.data, l.size); }
+inline bool operator==(const literal &l, const char *s) { return !strncmp(s, l.data, l.size); }
 
 inline std::ostream& operator<<(std::ostream &os, const literal &l) {
   for(size_t i = 0; i < l.size; i++) {
@@ -113,10 +109,21 @@ void print(T&& first, Args&&... rest) {
 }
 
 template<class T, class U, size_t N>
-bool is_one_of(const U c, const T (&x)[N], size_t *index=NULL) {
+bool is_one_of(const U c, const T (&x)[N]) {
   for(size_t i = 0; i < N; i++) {
     if(c == x[i]) { 
-      if(index) *index = i;
+      return true; 
+    }
+  }
+  return false;
+}
+
+template<class T, class U, size_t N>
+bool is_one_of(const U c, const T (&x)[N], size_t *index) { // @Copy&Paste:
+  assert(index);
+  for(size_t i = 0; i < N; i++) {
+    if(c == x[i]) { 
+      *index = i;
       return true; 
     }
   }
@@ -127,6 +134,17 @@ bool is_one_of(const U c, const T (&x)[N], size_t *index=NULL) {
 #define array_size(x) (sizeof((x)) / sizeof(*(x)))
 
 inline void INC(const char *&c) {
+  assert(*c != '\0');
+  ++c;
+}
+
+inline void INC(const char *&c, s32 *nl, s32 *nc) {
+  if(*c == '\n') {
+    ++(*nl);
+    *nc = 1;
+  } else {
+    ++(*nc);
+  }
   assert(*c != '\0');
   ++c;
 }
@@ -144,11 +162,24 @@ inline void ADVANCE(const char *&c, size_t n) {
   c += n;
 }
 
+inline void ADVANCE(const char *&c, size_t n, s32 *nl, s32 *nc) {
+  assert(next_n_symbols_nz(c, n));
+  for(size_t i = 0; i < n; i++) { INC(c, nl, nc); }
+}
+
 #define define_functor(name, op) \
   struct name { \
     template<class T, class U> \
     auto operator()(T a, U b) -> decltype(a op b) { \
       return a op b; \
+    } \
+  }
+
+#define define_functor2(name, op) \
+  struct name { \
+    template<class T> \
+    T operator()(T a) {\
+      return op a; \
     } \
   }
 
@@ -169,4 +200,12 @@ define_functor(greater_or_equals, >=);
 define_functor(bit_and, &);
 define_functor(bit_or, |);
 define_functor(bit_xor, ^);
+define_functor(logic_and, &&);
+define_functor(logic_or, ||);
 
+define_functor2(plus, +);
+define_functor2(minus, -);
+define_functor2(logic_not, !);
+define_functor2(bit_not, ~);
+
+#endif
