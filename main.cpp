@@ -59,108 +59,6 @@ struct Var {
     f64  f64_;
   };
 };
-/*
-
-f64 from_var(Var v) {  // We don't know what return type this is going to be and putting `auto` here won't solve an issue ; compiler lies to us and always inferrs it as f64 . So `f64`.
-  switch(v.type) {
-    case TOKEN_SIGNED_NUMBER        : return v.s64_;
-    case TOKEN_FLOATING_POINT_NUMBER: return v.f64_;
-    case TOKEN_BOOLEAN              : return v.bool_;
-  }
-  assert(0);
-  return 0;
-}
-
-s64 from_var_int_only(Var v) {
-  assert(v.type != TOKEN_FLOATING_POINT_NUMBER);
-  return from_var(v);
-}
-
-template<class BinaryOperator, class R>
-Var do_binary_var_math(R (&getter)(Var), Var a, Var b) {
-  BinaryOperator op;
-  auto f1 = getter(a);
-  auto f2 = getter(b);
-  auto f3 = op(f1, f2);
-
-  Var v;
-  if(is_same<decltype(f3), f64>::value) {
-    v.type = TOKEN_FLOATING_POINT_NUMBER;
-    v.f64_ = f3;
-  } else if(is_same<decltype(f3), s64>::value) {
-    v.type = TOKEN_SIGNED_NUMBER;
-    v.s64_ = f3;
-  } else if(is_same<decltype(f3), bool>::value) {
-    v.type  = TOKEN_BOOLEAN;
-    v.bool_ = f3;
-  } else {
-    assert(0);
-  }
-  return v;
-}
-
-template<class UnaryOperator, class R>
-Var do_unary_var_math(R (&getter)(Var), Var a) {
-  UnaryOperator op;
-  auto f1 = getter(a);
-  auto f3 = op(f1);
-
-  Var v;
-  if(is_same<decltype(f3), f64>::value) {
-    v.type = TOKEN_FLOATING_POINT_NUMBER;
-    v.f64_ = f3;
-  } else if(is_same<decltype(f3), s64>::value) {
-    v.type = TOKEN_SIGNED_NUMBER;
-    v.s64_ = f3;
-  } else if(is_same<decltype(f3), bool>::value) {
-    v.type  = TOKEN_BOOLEAN;
-    v.bool_ = f3;
-  } else {
-    assert(0);
-  }
-  return v;
-}
-
-Var operator!(Var a) {  // @CrazyStuff: When I try to do it with functor, C++ decides to call from_var_int_only even though I'm passing from_var ; so @Copy&Paste: Fuck C++.
-  auto f1 = from_var(a);
-  auto f3 = !f1;
-  Var v;
-  if(is_same<decltype(f3), f64>::value) {
-    v.type = TOKEN_FLOATING_POINT_NUMBER;
-    v.f64_ = f3;
-  } else if(is_same<decltype(f3), s64>::value) {
-    v.type = TOKEN_SIGNED_NUMBER;
-    v.s64_ = f3;
-  } else if(is_same<decltype(f3), bool>::value) {
-    v.type  = TOKEN_BOOLEAN;
-    v.bool_ = f3;
-  } else {
-    assert(0);
-  }
-  return v;
-}
-
-Var operator*(Var a, Var b)  { return do_binary_var_math<multiply>  (from_var, a, b); }
-Var operator/(Var a, Var b)  { return do_binary_var_math<divide>    (from_var, a, b); }
-Var operator+(Var a, Var b)  { return do_binary_var_math<add>       (from_var, a, b); }
-Var operator-(Var a, Var b)  { return do_binary_var_math<subtract>  (from_var, a, b); }
-Var operator==(Var a, Var b) { return do_binary_var_math<equals>    (from_var, a, b); }
-Var operator!=(Var a, Var b) { return do_binary_var_math<not_equals>(from_var, a, b); }
-Var operator%(Var a, Var b)  { return do_binary_var_math<modulo>    (from_var_int_only, a, b); }
-Var operator<(Var a, Var b)  { return do_binary_var_math<less>      (from_var, a, b); }
-Var operator>(Var a, Var b)  { return do_binary_var_math<greater>   (from_var, a, b); }
-Var operator<=(Var a, Var b) { return do_binary_var_math<less_or_equals>    (from_var, a, b); }
-Var operator>=(Var a, Var b) { return do_binary_var_math<greater_or_equals> (from_var, a, b); }
-Var operator&(Var a, Var b)  { return do_binary_var_math<bit_and> (from_var_int_only, a, b); }
-Var operator|(Var a, Var b)  { return do_binary_var_math<bit_or>  (from_var_int_only, a, b); }
-Var operator^(Var a, Var b)  { return do_binary_var_math<bit_xor> (from_var_int_only, a, b); }
-Var operator&&(Var a, Var b) { return do_binary_var_math<logic_and> (from_var, a, b); }
-Var operator||(Var a, Var b) { return do_binary_var_math<logic_or>  (from_var, a, b); }
-
-Var operator+(Var a)         { return do_unary_var_math<plus>      (from_var, a); }
-Var operator-(Var a)         { return do_unary_var_math<minus>     (from_var, a); }
-Var operator~(Var a)         { return do_unary_var_math<bit_not>   (from_var_int_only, a); }
-*/
 
 struct Token {
   TokenType type = TOKEN_END_OF_INPUT;
@@ -176,7 +74,7 @@ struct Keyword_Def {
   TokenType type;
 };
 
-
+// @Speed: hash_table for O(1) lookup. 
 struct Scope {
   array<literal>                names;
   array<struct Ast_Expression*> decls;
@@ -188,12 +86,13 @@ struct Block {
 enum Ast_Type : u16 {
   Ast_VariableType = 0,
   Ast_IdentType,
-  Ast_ProcCallType,
   Ast_LiteralType,
   Ast_PlusType,
   Ast_MinusType,
   Ast_LogicNotType,
   Ast_BitwiseNotType,
+  Ast_IncrementType,
+  Ast_DecrementType,
   Ast_AddType,
   Ast_SubType,
   Ast_MulType,
@@ -213,9 +112,16 @@ enum Ast_Type : u16 {
   Ast_IfType,
   Ast_ForType,
   Ast_WhileType,
-  Ast_ProcType,
   Ast_Variable_DeclarationType,
   Ast_Function_DeclarationType,
+  Ast_AssignType,
+  Ast_AddAssignType,
+  Ast_SubAssignType,
+  Ast_MulAssignType,
+  Ast_DivAssignType,
+  Ast_XorAssignType,
+  Ast_AndAssignType,
+  Ast_OrAssignType,
 };
 
 struct Ast_Expression {
@@ -235,18 +141,13 @@ struct Ast_Ident : public Ast_Expression {
   DEFINE_DEFAULT_CONSTRUCTOR(Ast_Ident, Ast_Expression);
 };
 
-struct Ast_ProcCall : public Ast_Expression {
-  literal name;
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_ProcCall, Ast_Expression);
-};
-
 struct Ast_Literal : public Ast_Expression {
   Var var;
   DEFINE_DEFAULT_CONSTRUCTOR(Ast_Literal, Ast_Expression);
 };
 
 struct Ast_Declaration : public Ast_Expression {
-  literal decl_type, decl_ident;
+  literal decl_type, decl_name;
 };
 
 struct Ast_Variable_Declaration : public Ast_Declaration {
@@ -261,6 +162,16 @@ struct Ast_Function_Declaration : public Ast_Declaration {
   DEFINE_DEFAULT_CONSTRUCTOR(Ast_Function_Declaration, Ast_Declaration);
 };
 
+
+#define DEFINE_UNARY_OPERATOR(type) \
+  struct type : public Ast_UnaryOperator { \
+    DEFINE_DEFAULT_CONSTRUCTOR(type, Ast_UnaryOperator); \
+  };
+#define DEFINE_BINARY_OPERATOR(type) \
+  struct type : public Ast_BinaryOperator { \
+    DEFINE_DEFAULT_CONSTRUCTOR(type, Ast_BinaryOperator); \
+  };
+
 struct Ast_BinaryOperator : public Ast_Expression {
   Ast_Expression *left  = NULL;
   Ast_Expression *right = NULL;
@@ -270,66 +181,37 @@ struct Ast_UnaryOperator : public Ast_Expression {
   Ast_Expression *left  = NULL;
 };
 
-struct Ast_Plus : public Ast_UnaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Plus, Ast_UnaryOperator);
-};
-struct Ast_Minus : public Ast_UnaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Minus, Ast_UnaryOperator);
-};
-struct Ast_LogicNot : public Ast_UnaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_LogicNot, Ast_UnaryOperator);
-};
-struct Ast_BitwiseNot : public Ast_UnaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_BitwiseNot, Ast_UnaryOperator);
-};
-struct Ast_Add : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Add, Ast_BinaryOperator);
-};
-struct Ast_Sub : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Sub, Ast_BinaryOperator);
-};
-struct Ast_Mul : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Mul, Ast_BinaryOperator);
-};
-struct Ast_Div : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Div, Ast_BinaryOperator);
-};
-struct Ast_Mod : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Mod, Ast_BinaryOperator);
-};
-struct Ast_Equals : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Equals, Ast_BinaryOperator);
-};
-struct Ast_NotEquals : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_NotEquals, Ast_BinaryOperator);
-};
-struct Ast_Less : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Less, Ast_BinaryOperator);
-};
-struct Ast_Greater : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Greater, Ast_BinaryOperator);
-};
-struct Ast_LessOrEquals : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_LessOrEquals, Ast_BinaryOperator);
-};
-struct Ast_GreaterOrEquals : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_GreaterOrEquals, Ast_BinaryOperator);
-};
-struct Ast_BitwiseAnd : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_BitwiseAnd, Ast_BinaryOperator);
-};
-struct Ast_BitwiseOr : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_BitwiseOr, Ast_BinaryOperator);
-};
-struct Ast_BitwiseXor : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_BitwiseXor, Ast_BinaryOperator);
-};
-struct Ast_LogicAnd : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_LogicAnd, Ast_BinaryOperator);
-};
-struct Ast_LogicOr : public Ast_BinaryOperator {
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_LogicOr, Ast_BinaryOperator);
-};
+DEFINE_UNARY_OPERATOR(Ast_Plus);
+DEFINE_UNARY_OPERATOR(Ast_Minus);
+DEFINE_UNARY_OPERATOR(Ast_LogicNot);
+DEFINE_UNARY_OPERATOR(Ast_BitwiseNot);
+DEFINE_UNARY_OPERATOR(Ast_Increment);
+DEFINE_UNARY_OPERATOR(Ast_Decrement);
+
+DEFINE_BINARY_OPERATOR(Ast_Add);
+DEFINE_BINARY_OPERATOR(Ast_Sub);
+DEFINE_BINARY_OPERATOR(Ast_Mul);
+DEFINE_BINARY_OPERATOR(Ast_Div);
+DEFINE_BINARY_OPERATOR(Ast_Mod);
+DEFINE_BINARY_OPERATOR(Ast_Equals);
+DEFINE_BINARY_OPERATOR(Ast_NotEquals);
+DEFINE_BINARY_OPERATOR(Ast_Less);
+DEFINE_BINARY_OPERATOR(Ast_Greater);
+DEFINE_BINARY_OPERATOR(Ast_LessOrEquals);
+DEFINE_BINARY_OPERATOR(Ast_GreaterOrEquals);
+DEFINE_BINARY_OPERATOR(Ast_BitwiseAnd);
+DEFINE_BINARY_OPERATOR(Ast_BitwiseOr);
+DEFINE_BINARY_OPERATOR(Ast_BitwiseXor);
+DEFINE_BINARY_OPERATOR(Ast_LogicAnd);
+DEFINE_BINARY_OPERATOR(Ast_LogicOr);
+DEFINE_BINARY_OPERATOR(Ast_Assign);
+DEFINE_BINARY_OPERATOR(Ast_AddAssign);
+DEFINE_BINARY_OPERATOR(Ast_SubAssign);
+DEFINE_BINARY_OPERATOR(Ast_MulAssign);
+DEFINE_BINARY_OPERATOR(Ast_DivAssign);
+DEFINE_BINARY_OPERATOR(Ast_XorAssign);
+DEFINE_BINARY_OPERATOR(Ast_AndAssign);
+DEFINE_BINARY_OPERATOR(Ast_OrAssign);
 
 struct Ast_If : public Ast_Expression {
   Ast_Expression *condition;
@@ -348,30 +230,25 @@ struct Ast_If : public Ast_Expression {
   DEFINE_DEFAULT_CONSTRUCTOR(Ast_If, Ast_Expression);
 };
 
-
-/*
-// @Speed: Hash table!
-struct Variables_Array {
-  array<literal> names;
-  array<Var>     vars;
-};
-static Variables_Array variables;
-
-// @Speed: Hash table!
-struct Global_Scope { // For functions, only?
-  array<literal> names;
-  array<Ast_Expression*> decls;
-};
-static Global_Scope global_scope;
-*/
-
-struct Ast_Proc : public Ast_Expression {
-  using Ast_Expression::Ast_Expression;
-  literal                name;
+struct Ast_While : public Ast_Expression {
+  Ast_Expression *condition;
+  
   array<Ast_Expression*> block;
-  s32                    number_of_arguments;
-  DEFINE_DEFAULT_CONSTRUCTOR(Ast_Proc, Ast_Expression);
+  Scope scope, *parent;
+
+  DEFINE_DEFAULT_CONSTRUCTOR(Ast_While, Ast_Expression);
 };
+
+struct Ast_For : public Ast_Expression {
+  Ast_Expression *init, *condition, *step;
+  
+  array<Ast_Expression*> block;
+  Scope scope, *parent;
+
+  DEFINE_DEFAULT_CONSTRUCTOR(Ast_For, Ast_Expression);
+};
+
+
 
 
 
@@ -410,7 +287,7 @@ static const Keyword_Def *maybe_get_keyword(const char *c) {
     if(c == keyword_table[i].name) {
       ADVANCE(c, keyword_table[i].name.size);
 
-      if(is_one_of(*c, " (\r\t\n")) {
+      if(!isalpha(*c) && *c != '_' && !isdigit(*c)) {
         return &keyword_table[i];
       } else {
         continue;
@@ -456,8 +333,7 @@ static Token *peek_than_eat_token(s32 i = 0) {
 
 static void lex(array<Token> *tokens, const char *cursor) {
 
-  // @Speed: Hash tables for O(1) lookup.
-  // For tokens search takes O(n).
+  // @Speed: precomputed hash tables for O(1) lookup.
   const char      single_symbol_tokens[]     = "(){}=;,.*&[]+-/!<>%?:#|^~";
   const literal   multiple_symbol_literals[] = {"==", "!=", "||", "&&", "++", "--", "+=", "-=", "*=", "/=", "^=", "&=", "|=", ">>", "<<", ">=", "<="};
   const TokenType multiple_symbol_tokens[]   = {TOKEN_DOUBLE_EQUALS, TOKEN_NOT_EQUALS, TOKEN_LOGICAL_OR, TOKEN_LOGICAL_AND, TOKEN_INCREMENT, TOKEN_DECREMENT, TOKEN_ADD_ASSIGN, TOKEN_SUB_ASSIGN, TOKEN_MUL_ASSIGN, TOKEN_DIV_ASSIGN, TOKEN_XOR_ASSIGN, TOKEN_AND_ASSIGN, TOKEN_OR_ASSIGN, TOKEN_RIGHT_SHIFT, TOKEN_LEFT_SHIFT, TOKEN_GREATER_OR_EQUALS, TOKEN_LESS_OR_EQUALS};
@@ -480,21 +356,6 @@ static void lex(array<Token> *tokens, const char *cursor) {
       tok.type           = k->type;
       tokens->add(tok);
       //
-
-#if 0
-      @OMG:
-    } else if(*cursor == '\"' || *cursor == '\'') {
-
-      char f = *cursor;
-
-      if(f == '\'') {
-        INC(cursor);
-        tok.type = TOKEN_SINGLE_CHARACTER;
-        tok.string_literal = string(cursor, 1);
-      } else {
-      }
-    }
-#endif
 
     } else if(cursor == literal("true") || cursor == literal("false")) {
       // Bool token.
@@ -742,56 +603,65 @@ static bool check_ast(const Ast_Expression *ast, Ast_Expression *a, const char *
 
 
 
-static Ast_Expression *parse_binary_operator(Ast_Expression *, s8);
-static Ast_Expression *parse_expression(s8);
-static void parse(Scope *, array<Ast_Expression*> *, TokenType);
-
 static bool is_unary_operator(TokenType t) {
   switch(t) {
-    case '+':
-    case '-':
-    case '~':
-    case '!':
-      return true;
-    default: 
-      return false;
+  case '+':
+  case '-':
+  case '~':
+  case '!':
+  case TOKEN_INCREMENT:
+  case TOKEN_DECREMENT:
+    return true;
+  default: 
+    return false;
   }
 }
 
 static bool is_binary_operator(TokenType t) {
   switch(t) {
-    case '*':
-    case '/':
-    case '%':
-    case '+':
-    case '-':
-    case TOKEN_RIGHT_SHIFT:
-    case TOKEN_LEFT_SHIFT :
-    case '>':
-    case '<':
-    case TOKEN_GREATER_OR_EQUALS:
-    case TOKEN_LESS_OR_EQUALS:
-    case TOKEN_DOUBLE_EQUALS:
-    case TOKEN_NOT_EQUALS:
-    case '&':
-    case '|':
-    case '^':
-    case TOKEN_LOGICAL_AND:
-    case TOKEN_LOGICAL_OR:
-      return true;
-    default: 
-      return false;
+  case '*':
+  case '/':
+  case '%':
+  case '+':
+  case '-':
+  case TOKEN_RIGHT_SHIFT:
+  case TOKEN_LEFT_SHIFT :
+  case '>':
+  case '<':
+  case TOKEN_GREATER_OR_EQUALS:
+  case TOKEN_LESS_OR_EQUALS:
+  case TOKEN_DOUBLE_EQUALS:
+  case TOKEN_NOT_EQUALS:
+  case '&':
+  case '|':
+  case '^':
+  case TOKEN_LOGICAL_AND:
+  case TOKEN_LOGICAL_OR:
+  case TOKEN_ADD_ASSIGN:
+  case TOKEN_SUB_ASSIGN:
+  case TOKEN_MUL_ASSIGN:
+  case TOKEN_DIV_ASSIGN:
+  case TOKEN_XOR_ASSIGN:
+  case TOKEN_AND_ASSIGN:
+  case TOKEN_OR_ASSIGN:
+  case '=':
+    return true;
+  default: 
+    return false;
   }
 }
 
 static s8 get_unop_precedence(TokenType t) {
   switch(t) {
+    case TOKEN_INCREMENT:
+    case TOKEN_DECREMENT:
+      return 16;
     case '~':
     case '!':
     case '+':
     case '-':
       return 15;
-    defualt: assert(0); return 0;
+    default: assert(0); return 0;
   }
 }
 
@@ -825,13 +695,24 @@ static s8 get_binop_precedence(TokenType t) {
       return 4;
     case TOKEN_LOGICAL_OR:
       return 3;
-    defualt: assert(0); return 0;
+    case TOKEN_ADD_ASSIGN:
+    case TOKEN_SUB_ASSIGN:
+    case TOKEN_MUL_ASSIGN:
+    case TOKEN_DIV_ASSIGN:
+    case TOKEN_XOR_ASSIGN:
+    case TOKEN_AND_ASSIGN:
+    case TOKEN_OR_ASSIGN:
+    case '=':
+      return 2;
+    default: assert(0); return 0;
   }
 }
 
 static Ast_Type ast_unop_type_from_token_type(TokenType t) {
   Ast_Type e = (Ast_Type)-1;
   switch(t) {
+    case TOKEN_INCREMENT:         return Ast_IncrementType;
+    case TOKEN_DECREMENT:         return Ast_DecrementType;
     case '~':                     return Ast_BitwiseNotType;
     case '!':                     return Ast_LogicNotType;
     case '+':                     return Ast_PlusType;
@@ -861,12 +742,24 @@ static Ast_Type ast_binop_type_from_token_type(TokenType t) {
     case '^':                     return Ast_BitwiseXorType;
     case TOKEN_LOGICAL_AND:       return Ast_LogicAndType;
     case TOKEN_LOGICAL_OR:        return Ast_LogicOrType;
+    case '=':                     return Ast_AssignType;
+    case TOKEN_ADD_ASSIGN:        return Ast_AddAssignType;
+    case TOKEN_SUB_ASSIGN:        return Ast_SubAssignType;
+    case TOKEN_MUL_ASSIGN:        return Ast_MulAssignType;
+    case TOKEN_DIV_ASSIGN:        return Ast_DivAssignType;
+    case TOKEN_XOR_ASSIGN:        return Ast_XorAssignType;
+    case TOKEN_AND_ASSIGN:        return Ast_AndAssignType;
+    case TOKEN_OR_ASSIGN:         return Ast_OrAssignType;
     default:                      assert(0); return e;
   }
 }
 
+static Ast_Expression *parse_binary_operator(Ast_Expression *, TokenType, s8);
+static Ast_Expression *parse_expression(TokenType, s8);
+static void parse(Scope *, array<Ast_Expression*> *, TokenType);
 
-static Ast_Expression *parse_binary_operator(Ast_Expression *left, s8 priority) {
+static const s8 MIN_PRIORITY = -1;
+static Ast_Expression *parse_binary_operator(Ast_Expression *left, TokenType terminator, s8 priority = MIN_PRIORITY) {
   const Token    *tok  = peek_token(-1);
   const TokenType type = tok->type;
 
@@ -876,13 +769,13 @@ static Ast_Expression *parse_binary_operator(Ast_Expression *left, s8 priority) 
       auto op   = NEW_AST(Ast_BinaryOperator);
       op->type  = ast_binop_type_from_token_type(type);
       op->left  = left;
-      op->right = parse_expression(p);
-      return parse_binary_operator(op, priority);
+      op->right = parse_expression(terminator, p);
+      return parse_binary_operator(op, terminator, priority);
     } else {
       return left;
     }
 
-  } else if (is_one_of(type, ";{)")) {
+  } else if (type == ')' || type == terminator) {
     return left;
 
   } else { 
@@ -894,8 +787,7 @@ static Ast_Expression *parse_binary_operator(Ast_Expression *left, s8 priority) 
   return NULL;
 }
 
-static const s8 MIN_PRIORITY = -1;
-static Ast_Expression *parse_expression(s8 priority = MIN_PRIORITY) {
+static Ast_Expression *parse_expression(TokenType terminator = (TokenType)';', s8 priority = MIN_PRIORITY) {
   const Token    *tok  = peek_than_eat_token();
   const TokenType type = tok->type;
 
@@ -906,28 +798,15 @@ static Ast_Expression *parse_expression(s8 priority = MIN_PRIORITY) {
 
     auto op = NEW_AST(Ast_UnaryOperator);
     op->type = ast_unop_type_from_token_type(type);
-    op->left = parse_expression(new_p);
+    op->left = parse_expression(terminator, new_p);
     left     = op;
-    return parse_binary_operator(left, priority);
+    return parse_binary_operator(left, terminator, priority);
 
 
   } else if (type == TOKEN_IDENT) {
-    auto lit = tok->string_literal;
-
-    if(peek_token()->type == '(') { // It's a function call.
-      eat_token();
-      assert(peek_token()->type == ')'); // @Incomplete: for now we handle only 0 args.
-      eat_token();
-
-      auto e  = NEW_AST(Ast_ProcCall);
-      e->name = lit;
-      left    = e;
-
-    } else { // assuming it's just a variable.
-      auto e = NEW_AST(Ast_Ident);
-      e->name = lit;
-      left    = e;
-    }
+    auto e  = NEW_AST(Ast_Ident);
+    e->name = tok->string_literal;
+    left    = e;
 
   } else if (type == TOKEN_NUMBER || type == TOKEN_BOOLEAN) {
     auto e = NEW_AST(Ast_Literal);
@@ -935,7 +814,7 @@ static Ast_Expression *parse_expression(s8 priority = MIN_PRIORITY) {
     left   = e;
 
   } else if (type == '(') {
-    left = parse_expression();
+    left = parse_expression(terminator);
 
   } else {
     get_string_from_literal(name, tok->string_literal);
@@ -944,20 +823,22 @@ static Ast_Expression *parse_expression(s8 priority = MIN_PRIORITY) {
   }
 
   eat_token();
-  return parse_binary_operator(left, priority);
+  return parse_binary_operator(left, terminator, priority);
 }
 
 static void parse_if_statement(Ast_If *if_, Ast_Expression *condition, Scope *then_scope, array<Ast_Expression*> *then_block, Scope *else_scope, array<Ast_Expression*> *else_block) {
   if(peek_than_eat_token()->type != '(') { assert(0); } // @ReportError.
-  condition = parse_expression();
-  assert(peek_token(-1)->type == ')'); // AssertWillGetFired: We actually don't know which token terminated the parse_expression(). So we need to pass it in parse_expression as an argument. Then this assert is fine.
-  if (!condition) { return; } // Error must have already been reported.
+  condition = parse_expression((TokenType)')');
 
-  if(peek_than_eat_token()->type != '{') { assert(0); } // @ReportError.
+  if (!condition) { return; } // @NeedToReturnAnError: After reporting an error from parse_expression, we still run parse()'s while loop. 
+
+  Token *tok = peek_than_eat_token();
+  if     (tok->type == ';') { return; }
+  else if(tok->type != '{') { assert(0); } // @ReportError.
 
   parse(then_scope, then_block, (TokenType)'}');
 
-  Token *tok = peek_token();
+  tok = peek_token();
   if(tok->type == TOKEN_ELSE_STATEMENT) {
     eat_token();
     tok = peek_than_eat_token();
@@ -967,7 +848,6 @@ static void parse_if_statement(Ast_If *if_, Ast_Expression *condition, Scope *th
       auto new_scope     = if_->if_else_scopes.add();
       auto new_block     = if_->if_else_blocks.add();
       parse_if_statement(if_, &new_condition, &new_scope, &new_block, else_scope, else_block);
-      assert(peek_token(-1)->type == '}');
       // Done.
 
     } else if(tok->type == '{') {
@@ -984,29 +864,41 @@ static void parse_if_statement(Ast_If *if_, Ast_Expression *condition, Scope *th
 }
 
 static void parse(Scope *current_scope, array<Ast_Expression*> *block = NULL, TokenType terminator = TOKEN_END_OF_INPUT) {
+  // @Note:
+  // block != NULL, means we are parsing a function body.
+  // 
+
   while(1) {
     literal         ident;
     Ast_Expression *ast = NULL;
 
-    Token *tok = peek_than_eat_token();
-    if(tok->type == TOKEN_IDENT) {
-      // int ...;
-      literal decl_type, decl_ident;
+    Token *tok = peek_token();
 
-      decl_type  = tok->string_literal;
-      tok        = peek_than_eat_token(); 
-      if(tok->type != TOKEN_IDENT) { assert(0); }  // @ReportError.
-      decl_ident = tok->string_literal;
+    if(block && tok->type != TOKEN_END_OF_INPUT && (is_unary_operator(tok->type) || is_binary_operator(peek_token(1)->type))) {
+      block->add(parse_expression());
+      continue;
+    }
+
+    eat_token();
+
+    if(tok->type == TOKEN_IDENT) {
+      // ident ...;
+      literal ident1, ident2;
+
+      ident1        = tok->string_literal;
+      Token *tok    = peek_than_eat_token(); 
+      if(tok->type != TOKEN_IDENT) { assert(0); } // @ReportError.
+      ident2        = tok->string_literal;
       
       tok = peek_than_eat_token();
       if(tok->type == '(') {
-        // Function declaration.
+        // int a(...);
         auto fdecl = NEW_AST(Ast_Function_Declaration);
-        fdecl->decl_type  = decl_type;
-        fdecl->decl_ident = decl_ident;
-        fdecl->parent     = current_scope;
-        ident             = decl_ident;
-        ast               = fdecl;
+        fdecl->decl_type = ident1;
+        fdecl->decl_name = ident2;
+        fdecl->parent    = current_scope;
+        ident            = fdecl->decl_name;
+        ast              = fdecl;
 
         // parse argument list. @Incomplete:
         //
@@ -1014,19 +906,18 @@ static void parse(Scope *current_scope, array<Ast_Expression*> *block = NULL, To
         if(peek_than_eat_token()->type != ')') { assert(0); } // @ReportError.
         if(peek_than_eat_token()->type != '{') { assert(0); } // @ReportError.
 
-        // parse block. @Incomplete:
         parse(&fdecl->scope, &fdecl->block, (TokenType)'}');
-
-        assert(peek_token(-1)->type == '}');
+        // Done.
 
       } else if(tok->type == '=') {
-        // Variable declaration.
+        // int a = ...;
         auto vdecl = NEW_AST(Ast_Variable_Declaration);
-        vdecl->decl_type  = decl_type;
-        vdecl->decl_ident = decl_ident;
-        vdecl->expr       = parse_expression();
-        ident             = decl_ident;
-        ast               = vdecl;
+        vdecl->decl_type = ident1;
+        vdecl->decl_name = ident2;
+        vdecl->expr      = parse_expression();
+        ident            = vdecl->decl_name;
+        ast              = vdecl;
+        // Done.
 
       } else {
         assert(0); // @ReportError.
@@ -1042,11 +933,57 @@ static void parse(Scope *current_scope, array<Ast_Expression*> *block = NULL, To
       ast = NULL;
 
     } else if(block && tok->type == TOKEN_IF_STATEMENT) {
-
-      auto if_ = NEW_AST(Ast_If);
+      auto if_    = NEW_AST(Ast_If);
       if_->parent = current_scope;
       parse_if_statement(if_, if_->condition, &if_->then_scope, &if_->then_block, &if_->else_scope, &if_->else_block);
       block->add(if_);
+      continue;
+
+
+    } else if(block && tok->type == TOKEN_WHILE_STATEMENT) {
+      auto while_ = NEW_AST(Ast_While);
+      while_->parent = current_scope;
+      
+      if(peek_than_eat_token()->type != '(') { assert(0); } // @ReportError.
+      while_->condition = parse_expression((TokenType)')');
+      if(!while_->condition) { return; }
+
+      Token *tok = peek_than_eat_token();
+      if(tok->type == ';') { 
+        // Nothing more to parse.
+      } else if(tok->type == '{') { 
+        parse(&while_->scope, &while_->block, (TokenType)'}');
+      } else {
+        assert(0); // @ReportError.
+      }
+
+      block->add(while_);
+      continue;
+
+
+    } else if(block && tok->type == TOKEN_FOR_STATEMENT) {
+      auto for_ = NEW_AST(Ast_For);
+      for_->parent = current_scope;
+
+      if(peek_than_eat_token()->type != '(') { assert(0); } // @ReportError.
+      for_->init      = parse_expression();
+      if(!for_->init)      { assert(0); } // @ReportError.
+
+      for_->condition = parse_expression();
+      if(!for_->condition) { assert(0); } // @ReportError.
+
+      for_->step      = parse_expression((TokenType)')');
+      if(!for_->step)      { assert(0); } // @ReportError.
+
+      tok = peek_than_eat_token();
+      if(tok->type == ';') {
+        // Nothing more to parse.
+      } else if(tok->type == '{') {
+        parse(&for_->scope, &for_->block, (TokenType)'}');
+      } else {
+        assert(0); // @ReportError.
+      }
+      block->add(for_);
       continue;
 
 
@@ -1056,144 +993,20 @@ static void parse(Scope *current_scope, array<Ast_Expression*> *block = NULL, To
       assert(0);
     }
 
-    if(ast) {
-      // Parsed AST node correctly.
+    if(!ast) { return; }
+
+    // Parsed AST node correctly.
+    literal *iter;
+    current_scope->names.find(ident, &iter);
+
+    if(!iter) {
       current_scope->names.add(ident);
       current_scope->decls.add(ast);
-
     } else {
-      break;
+      assert(0); // @ReportError: redeclaration.
     }
   }
 }
-
-/*
-#define CASE_DO_BINOP(binop, ast_type) \
-  case ast_type##Type: { \
-    const auto a = static_cast<const ast_type*>(expr); \
-    return interp_expr(a->left) binop interp_expr(a->right); \
-  }
-#define CASE_DO_UNOP(unop, ast_type) \
-  case ast_type##Type: { \
-    const auto a = static_cast<const ast_type*>(expr); \
-    return unop interp_expr(a->left); \
-  }
-
-static Var interp_expr(Ast_Expression *expr) {
-  switch(expr->type) {
-    CASE_DO_UNOP(+, Ast_Plus);
-    CASE_DO_UNOP(-, Ast_Minus);
-    CASE_DO_UNOP(!, Ast_LogicNot);
-    CASE_DO_UNOP(~, Ast_BitwiseNot); // @WrongTypes:
-
-    CASE_DO_BINOP(*, Ast_Mul);
-    CASE_DO_BINOP(/, Ast_Div); // @ZeroDivision:
-    CASE_DO_BINOP(+, Ast_Add);
-    CASE_DO_BINOP(-, Ast_Sub);
-    CASE_DO_BINOP(%, Ast_Mod); // @ZeroDivision: @WrongTypes:
-    CASE_DO_BINOP(==, Ast_Equals);
-    CASE_DO_BINOP(!=, Ast_NotEquals);
-    CASE_DO_BINOP(<, Ast_Less);
-    CASE_DO_BINOP(>, Ast_Greater);
-    CASE_DO_BINOP(<=, Ast_LessOrEquals);
-    CASE_DO_BINOP(>=, Ast_GreaterOrEquals);
-    CASE_DO_BINOP(&, Ast_BitwiseAnd); // @WrongTypes: passing floating point number to bitwise ops will crash programm, however it's not OK.
-    CASE_DO_BINOP(|, Ast_BitwiseOr);  // @WrongTypes:
-    CASE_DO_BINOP(^, Ast_BitwiseXor); // @WrongTypes:
-    CASE_DO_BINOP(&&, Ast_LogicAnd);
-    CASE_DO_BINOP(||, Ast_LogicOr);
-
-    case Ast_VariableType: {
-      auto a = static_cast<Ast_Variable*>(expr);
-      literal *iter; s32 index;
-      variables.names.find(a->name, &iter, &index);
-      assert(iter);
-      return variables.vars[index];
-    }
-
-    case Ast_LiteralType:
-      return static_cast<const Ast_Literal*>(expr)->var;
-
-    case Ast_IdentType: {
-      const auto a = static_cast<const Ast_Ident*>(expr);
-
-      literal *iter; s32 index;
-      variables.names.find(a->name, &iter, &index);
-      if(iter) {
-        return variables.vars[index];
-      } else {
-        // @Panic:
-        report_error("Use of variable before define!\n");
-        assert(0); // @Incomplete:
-        Var v;
-        return v;
-      }
-    }
-
-    case Ast_ProcCallType: {
-      const auto a = static_cast<const Ast_ProcCall*>(expr);
-
-      literal *iter; s32 index;
-      global_scope.names.find(a->name, &iter, &index);
-      if(iter) {
-        auto proc = static_cast<Ast_Proc *>(global_scope.decls[index]);
-
-        for(int i = 0; i < proc->block.size-1; i++) {
-          auto expr = proc->block[i];
-          interp(expr);
-        }
-        return interp_expr(proc->block[proc->block.size-1]);
-
-      } else {
-        // @Panic:
-        report_error("Use of function before define!\n");
-        assert(0); // @Incomplete:
-        Var v;
-        return v;
-      }
-    }
-
-    default: report_error("interp_expr() : unhandled switch case\n"); break;
-  }
-}
-
-static void interp(Ast_Expression *ast) {
-  switch(ast->type) {
-    case Ast_VariableType: {
-      const auto a = static_cast<const Ast_Variable*>(ast);
-
-      literal *iter; s32 index;
-      variables.names.find(a->name, &iter, &index);
-      if(iter) {
-        variables.vars[index] = interp_expr(a->expr);
-      } else {
-
-        // We should execute interp_expr before adding something to `variables.names`, cause now we have Ast_Vairable in interp_expr,
-        // that means we should keep `names` and `vars` same sizes. @Temporary: 
-        auto name = a->name;
-        auto expr = interp_expr(a->expr);
-        variables.names.add(name);
-        variables.vars.add(expr);
-      }
-      break;
-    }
-
-    case Ast_ProcType : {
-      auto a = static_cast<Ast_Proc*>(ast);
-      global_scope.names.add(a->name);
-      global_scope.decls.add(a);
-      break;
-    }
-
-    case Ast_ForType  :
-    case Ast_WhileType:
-    case Ast_IfType   :
-      break;
-
-    default: report_error("interp() : unhandled switch case @ShouldNeverHappen:\n"); assert(0); break;
-  }
-}
-*/
 
 static void read_entire_file(string *r, FILE *f) {
   fseek(f, 0, SEEK_END);
@@ -1216,6 +1029,7 @@ Ast_Declaration *get_decl_by_name(literal name, Scope *scope) {
   }
 }
 
+
 s32 main(s32 argc, s8 **argv) {
   string content;
 
@@ -1234,7 +1048,6 @@ s32 main(s32 argc, s8 **argv) {
 
   lex(&tokens, content.data);
 
-
   // @Preprocessor: ???
 
 
@@ -1249,7 +1062,8 @@ s32 main(s32 argc, s8 **argv) {
   for(auto &main_decls   : decl->scope.names)  { print(main_decls); }
 
 
-  Ast_If *a = (Ast_If*) decl->block[0];
+  //Ast_If *a = (Ast_If*) decl->block[0];
+  //print(decl->block.size);
 
   return 0;
 }

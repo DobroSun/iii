@@ -1,16 +1,15 @@
 #ifndef MY_ARRAY_IMPL_H
 #define MY_ARRAY_IMPL_H
 
+
 template<class T>
 struct array {
   T *data      = NULL;
   s32 capacity = 0;
   s32 size     = 0;
 
-  static constexpr s32 eight = 8;
 
   array() = default;
-
   ~array() {
     delete[] data;
     data     = NULL;
@@ -31,7 +30,17 @@ struct array {
     return add() = std::move(val);
   }
 
-  void find(const T &val, T **iter, s32 *index) {
+  void find(const T &val, T **iter) {
+    for(s32 i = 0; i < size; i++) {
+      if(this->operator[](i) == val) {
+        *iter = &this->operator[](i);
+        return;
+      }
+    }
+    *iter = NULL;
+  }
+
+  void find(const T &val, T **iter, s32 *index) { // @Copy&Paste:
     for(s32 i = 0; i < size; i++) {
       if(this->operator[](i) == val) {
         *iter  = &this->operator[](i);
@@ -41,6 +50,8 @@ struct array {
     }
     *iter = NULL;
   }
+
+
 
   s32 remove(const T &val) {
     T *iter; s32 index;
@@ -85,8 +96,8 @@ struct array {
     if(!data) {
       assert(!capacity && !size && !data);
 
-      new_cap = (new_cap)? new_cap: eight;
-      data = new T[new_cap];
+      new_cap  = (new_cap)? new_cap: 8;
+      data     = new T[new_cap];
       capacity = new_cap;
 
     } else {
@@ -125,7 +136,7 @@ struct array {
     }
   }
 
-  void resize_with_no_init(s32 new_size=0) {
+  void resize(s32 new_size=0) {
     reserve(new_size);
     size = capacity;
   }

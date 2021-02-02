@@ -2,13 +2,6 @@
 #define MY_STRING_IMPL_H
 
 
-inline void *allocate_and_zero(size_t bits) {
-  void *r = malloc(bits);
-  assert(r);
-  memset(r, 0, bits);
-  return r;
-}
-
 struct string {
   char *data = NULL;
   s32   capacity = 0;
@@ -19,18 +12,23 @@ struct string {
 
   template<size_t N>
   string(const char (&x)[N]) {
-    data     = (char*)allocate_and_zero(N);
+    data     = (char*)calloc(N, 1);
     memcpy(data, x, N);
     capacity = N;
     size     = N-1;
   }
 
   string(const char *x, size_t N) {
-    data     = (char*)allocate_and_zero(N+1);
+    data     = (char*)calloc(N+1, 1);
     memcpy(data, x, N+1);
     capacity = N+1;
     size     = N;
   }
+
+  string(const string &)            = default;
+  string &operator=(const string &) = default;
+  string(string &&)                 = default;
+  string &operator=(string &&)      = default;
 
   ~string() {
     free(data);
@@ -64,7 +62,7 @@ struct string {
 
       new_cap  = (new_cap)? new_cap: 8;
       ++new_cap;                              // null terminator.
-      data     = (char*)allocate_and_zero(new_cap);
+      data     = (char*)calloc(new_cap, 1);
       capacity = new_cap;
 
     } else {
@@ -73,7 +71,7 @@ struct string {
       ++new_cap;                              // null terminator.
 
       if(new_cap > capacity) {
-        auto new_data = (char*)allocate_and_zero(new_cap);
+        auto new_data = (char*)calloc(new_cap, 1);
 
         if(size) { memcpy(new_data, data, size); }
         capacity = new_cap;
@@ -133,7 +131,7 @@ inline bool operator==(const char *a, const string &b) { return !strncmp(a, b.da
 
 inline void copy_array(string *a, const string *b) {
   if(a->capacity <= b->size) {
-    a->data = (char*)allocate_and_zero(b->size);
+    a->data = (char*)calloc(b->size+1, 1); 
     a->capacity = b->size;
   }
   memcpy(a->data, b->data, b->size);
